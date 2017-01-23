@@ -1,0 +1,72 @@
+# Learn more about services, parameters and containers at
+# http://symfony.com/doc/current/book/service_container.html
+parameters:
+    request_result_parsers.list:
+        instProfile: 'Parser\InstagramBundle\Model\RequestResultParser\Profile'
+        instTagSearch: 'Parser\InstagramBundle\Model\RequestResultParser\TagSearch'
+        instProfileMedia: 'Parser\InstagramBundle\Model\RequestResultParser\ProfileFromMedia'
+        twitterPost: 'Parser\TwitterBundle\Model\RequestResultParser\TwitSearch'
+    
+    instagram_service.settings:       
+        profiles: []
+        tags: [riw16, riw2016]
+    
+    twitter_parser.settings:
+        consumerKey: 'BFpV9iKbPOBwbemDpm2NhtC9f'
+        consumerSecret: 'lCvtgQEASdApOZswgWLrurykc8hH8MeJyaWejatw6zI1h3m6vI'
+        
+    twitter_service.settings:        
+        search: ['#riw16', '#riw2016', '@@ru_riw', 'from:ru_riw']
+
+services:
+    
+    parser_service.base:
+        class: Parser\CoreBundle\AbstractParserService
+        abstract: true
+        arguments: ["@doctrine.orm.entity_manager"]
+            
+    
+    factory.request_result_parsers:
+        class: Parser\CoreBundle\Model\RequestResultParser\Factory
+        calls:
+            - [setParsersList, ["%request_result_parsers.list%"]]
+    
+    platform_parser.base:
+        class: Parser\CoreBundle\PlatformParser
+        abstract: true
+        calls:
+            - [setRequestParserFactory, [@factory.request_result_parsers]]
+    
+    platform_parser.instagram_profile:
+        class: Parser\InstagramBundle\ProfileParser
+        parent: platform_parser.base
+    
+    platform_parser.instagram_search:
+        class: Parser\InstagramBundle\TagSearchParser
+        parent: platform_parser.base
+    
+    platform_parser.instagram_profile_info:
+        class: Parser\InstagramBundle\ProfileInfoFromMediaParser
+        parent: platform_parser.base
+        
+    platform_parser.twitter:
+        class: Parser\TwitterBundle\PostParser
+        parent: platform_parser.base
+        calls:
+            - [setSettings, ["%twitter_parser.settings%"]]
+        
+    parser_service.instagram:
+        class: Parser\InstagramBundle\InstagramService
+        parent: parser_service.base
+        calls:
+            - [setSettings, ["%instagram_service.settings%"]]
+            - [setProfileParser, ["@platform_parser.instagram_profile"]]
+            - [setSearchTagParser, ["@platform_parser.instagram_search"]]
+            - [setProfileInfoParser, ["@platform_parser.instagram_profile_info"]]
+    
+    parser_service.twitter:
+        class: Parser\TwitterBundle\TwitterService
+        parent: parser_service.base
+        calls:
+            - [setSettings, ["%twitter_service.settings%"]]
+            - [setParser, ["@platform_parser.twitter"]]

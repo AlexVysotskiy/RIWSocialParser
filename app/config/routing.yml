@@ -1,0 +1,14 @@
+#parser_twitter:
+#    resource: "@ParserTwitterBundle/Controller/"
+#    type:     annotation
+#    prefix:   /
+
+#instagram:
+#    resource: "@InstagramBundle/Controller/"
+#    type:     annotation
+#    prefix:   /
+
+core:
+    resource: "@CoreBundle/Controller/"
+    type:     annotation
+    prefix:   /
